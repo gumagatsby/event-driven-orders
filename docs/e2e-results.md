@@ -20,6 +20,8 @@ All 13 checks passed.
 | Orders left pending at the end | 0 |
 | Products over-reserved or negative | 0 |
 
+**On GitHub Actions** (a smaller shared runner), the same script on a fresh cluster also passed 13 of 13: p50 257 ms, p95 387 ms; all orders confirmed 31 s after inventory returned and 52 s after Kafka returned. The correctness results were identical; only the timings differ.
+
 ## What the numbers mean
 
 **Where the time goes.** In the trace below, the request itself takes 12 ms, including the gRPC availability check (4.8 ms) and the transaction that writes the order and its event, and the order is confirmed 138 ms after it arrived. Nearly all of the gap is waiting: two outbox relays, one in each service, each poll every 200 ms. The end-to-end figures above are a little higher because the test also polls for the result every 100 ms. The poll interval is a setting: lower means faster confirmation and more idle database queries.
