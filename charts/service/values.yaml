@@ -1,0 +1,27 @@
+image:
+  repository: ""
+  tag: latest
+  pullPolicy: IfNotPresent
+replicas: 2
+
+ports:
+  http: 8080
+  grpc: null          # set to expose a gRPC port
+nodePort: null        # set to expose HTTP outside the cluster (kind maps it to the host)
+
+env: {}               # plain settings
+secretEnv: []         # [{ name, secret, key }] read from Kubernetes Secrets, never from values
+envAfterSecrets: {}   # settings that reference secretEnv, e.g. "$(DB_PASSWORD)"
+
+probes:
+  liveness: /healthz
+  readiness: /readyz
+  startupFailureThreshold: 30   # 30 x 2 s: room for a cold JVM
+
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { memory: 256Mi }
+
+# Who may connect. HTTP is open inside the cluster; gRPC only from the listed apps.
+networkPolicy:
+  grpcClients: []

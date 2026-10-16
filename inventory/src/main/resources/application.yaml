@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: inventory
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/inventory}
+    username: ${DB_USER:inventory}
+    password: ${DB_PASSWORD:inventory}
+    hikari:
+      maximum-pool-size: 10
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9094}
+    consumer:
+      group-id: inventory
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+    listener:
+      ack-mode: record
+  grpc:
+    server:
+      port: ${GRPC_PORT:9090}
+
+server:
+  port: ${HTTP_PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+inventory:
+  outbox:
+    poll-ms: 200
+    batch-size: 100

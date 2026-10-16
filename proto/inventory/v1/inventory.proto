@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+option java_multiple_files = true;
+option java_package = "dev.orders.inventory.grpc.v1";
+
+// Synchronous, read-only questions the orders service asks inventory.
+// Reserving stock is not here: that happens asynchronously over Kafka, so an
+// order is never lost because inventory was briefly unavailable.
+service InventoryService {
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+}
+
+message Product {
+  string sku = 1;
+  string name = 2;
+  int64 price_minor = 3;
+  int32 available = 4;
+}
+
+message ListProductsRequest {}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+
+message Line {
+  string sku = 1;
+  int32 quantity = 2;
+}
+
+message CheckAvailabilityRequest {
+  repeated Line lines = 1;
+}
+
+message LineAvailability {
+  string sku = 1;
+  bool known = 2;
+  int32 available = 3;
+  bool sufficient = 4;
+}
+
+message CheckAvailabilityResponse {
+  bool all_available = 1;
+  repeated LineAvailability lines = 2;
+}

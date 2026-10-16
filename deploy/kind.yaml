@@ -1,0 +1,11 @@
+# Local cluster: one control plane, two workers, so replicas spread across nodes.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: orders
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - { containerPort: 30080, hostPort: 8090, listenAddress: 127.0.0.1 }   # orders API
+      - { containerPort: 30686, hostPort: 16688, listenAddress: 127.0.0.1 }  # Jaeger UI
+  - role: worker
+  - role: worker

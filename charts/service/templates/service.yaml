@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "service.labels" . | nindent 4 }}
+spec:
+  type: {{ if .Values.nodePort }}NodePort{{ else }}ClusterIP{{ end }}
+  selector: {{- include "service.selector" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.ports.http }}
+      targetPort: http
+      {{- with .Values.nodePort }}
+      nodePort: {{ . }}
+      {{- end }}
+    {{- with .Values.ports.grpc }}
+    - { name: grpc, port: {{ . }}, targetPort: grpc }
+    {{- end }}
+{{- if .Values.ports.grpc }}
+---
+# gRPC keeps one long-lived connection, so a normal Service would send every
+# call from a client to the same pod. This headless Service returns every pod's
+# address, and clients balance calls across them (round robin).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-headless
+  labels: {{- include "service.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector: {{- include "service.selector" . | nindent 4 }}
+  ports:
+    - { name: grpc, port: {{ .Values.ports.grpc }}, targetPort: grpc }
+{{- end }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "service.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- include "service.selector" . | nindent 6 }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "service.selector" . | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports: [{ port: {{ .Values.ports.http }} }]
+    {{- if and .Values.ports.grpc .Values.networkPolicy.grpcClients }}
+    - from:
+        {{- range .Values.networkPolicy.grpcClients }}
+        - podSelector: { matchLabels: { app.kubernetes.io/name: {{ . }} } }
+        {{- end }}
+      ports: [{ port: {{ .Values.ports.grpc }} }]
+    {{- end }}

@@ -1,0 +1,22 @@
+image: { repository: orders-platform-inventory, tag: dev }
+replicas: 2
+ports: { http: 8080, grpc: 9090 }
+env:
+  DB_URL: jdbc:postgresql://inventory-db:5432/inventory
+  KAFKA_BOOTSTRAP: kafka-0.kafka:9092
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  OTEL_SERVICE_NAME: inventory
+  OTEL_METRICS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: none
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60 -XX:+ExitOnOutOfMemoryError
+secretEnv:
+  - { name: DB_PASSWORD, secret: inventory-db-credentials, key: password }
+probes:
+  liveness: /actuator/health/liveness
+  readiness: /actuator/health/readiness
+  startupFailureThreshold: 60
+networkPolicy:
+  grpcClients: [orders]
+resources:
+  requests: { cpu: 250m, memory: 512Mi }
+  limits: { memory: 768Mi }

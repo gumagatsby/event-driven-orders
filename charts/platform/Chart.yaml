@@ -1,0 +1,6 @@
+apiVersion: v2
+name: platform
+description: Shared infrastructure for local and CI clusters - Kafka (KRaft), one PostgreSQL per service, Jaeger
+type: application
+version: 0.1.0
+appVersion: "1.0"

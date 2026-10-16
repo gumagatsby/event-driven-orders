@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  orders:
+    name: orders (TypeScript)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: orders, POSTGRES_PASSWORD: orders, POSTGRES_DB: orders }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U orders" --health-interval 2s --health-retries 30
+    defaults:
+      run:
+        working-directory: orders
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: orders/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  inventory:
+    name: inventory (Java)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: inventory
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      # Testcontainers starts real Kafka and PostgreSQL for the tests.
+      - run: ./mvnw -B verify
+
+  charts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - run: |
+          helm lint charts/platform
+          helm lint charts/service -f deploy/values-orders.yaml
+          helm lint charts/service -f deploy/values-inventory.yaml
+
+  e2e:
+    name: end to end on kind
+    needs: [orders, inventory, charts]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: helm/kind-action@v1
+        with:
+          install_only: true
+      - uses: azure/setup-helm@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Build images, create the cluster, install the charts
+        run: scripts/up.sh
+      - name: Run the end-to-end checks, including outage drills
+        run: node scripts/e2e.mjs
+      - name: Cluster state on failure
+        if: failure()
+        run: |
+          kubectl get pods -o wide
+          kubectl logs deployment/orders --tail=100 || true
+          kubectl logs deployment/inventory --tail=100 || true

@@ -1,0 +1,33 @@
+kafka:
+  image: apache/kafka:4.3.1
+  storage: 2Gi
+  heap: -Xms256m -Xmx512m
+  resources:
+    requests: { cpu: 250m, memory: 768Mi }
+    limits: { memory: 1Gi }
+
+# One database per service: neither service can read the other's tables.
+databases:
+  - name: orders-db
+    database: orders
+    user: orders
+    client: orders        # only pods with app.kubernetes.io/name=<client> may connect
+  - name: inventory-db
+    database: inventory
+    user: inventory
+    client: inventory
+
+postgres:
+  image: postgres:17-alpine
+  storage: 1Gi
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
+jaeger:
+  image: jaegertracing/all-in-one:1.62.0
+  nodePort: 30686
+  maxTraces: 20000      # in-memory store; without a cap it grows until the pod is OOM-killed
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }

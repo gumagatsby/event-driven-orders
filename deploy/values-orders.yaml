@@ -1,0 +1,16 @@
+image: { repository: orders-platform-orders, tag: dev }
+replicas: 2
+ports: { http: 3000 }
+nodePort: 30080
+env:
+  KAFKA_BROKERS: kafka-0.kafka:9092
+  INVENTORY_GRPC: dns:///inventory-headless:9090
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  OTEL_SERVICE_NAME: orders
+secretEnv:
+  - { name: DB_PASSWORD, secret: orders-db-credentials, key: password }
+envAfterSecrets:
+  DATABASE_URL: postgres://orders:$(DB_PASSWORD)@orders-db:5432/orders
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits: { memory: 256Mi }

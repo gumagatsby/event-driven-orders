@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "service.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {{- include "service.selector" . | nindent 6 }}
+  strategy:
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  template:
+    metadata:
+      labels: {{- include "service.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, seccompProfile: { type: RuntimeDefault } }
+      # Spread replicas over nodes, so losing one node does not take the service down.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {{- include "service.selector" . | nindent 14 }}
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+            {{- range $k, $v := .Values.env }}
+            - { name: {{ $k }}, value: {{ $v | quote }} }
+            {{- end }}
+            {{- range .Values.secretEnv }}
+            - name: {{ .name }}
+              valueFrom: { secretKeyRef: { name: {{ .secret }}, key: {{ .key }} } }
+            {{- end }}
+            {{- range $k, $v := .Values.envAfterSecrets }}
+            - { name: {{ $k }}, value: {{ $v | quote }} }
+            {{- end }}
+          ports:
+            - { name: http, containerPort: {{ .Values.ports.http }} }
+            {{- with .Values.ports.grpc }}
+            - { name: grpc, containerPort: {{ . }} }
+            {{- end }}
+          startupProbe:
+            httpGet: { path: {{ .Values.probes.liveness }}, port: http }
+            periodSeconds: 2
+            failureThreshold: {{ .Values.probes.startupFailureThreshold }}
+          livenessProbe:
+            httpGet: { path: {{ .Values.probes.liveness }}, port: http }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: {{ .Values.probes.readiness }}, port: http }
+            periodSeconds: 5
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: { sizeLimit: 64Mi } }]
