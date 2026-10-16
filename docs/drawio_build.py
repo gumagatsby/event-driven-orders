@@ -201,9 +201,9 @@ for s_ in g:
     y += 54
 d.text("Measured on the cluster", lx, y + 6, 460, 20, fs=13, bold=True)
 d.text("40 orders for 10 monitors: exactly 10 confirmed.\n"
-       "Inventory down: 20 of 20 orders accepted, all confirmed 16 s after it returned.\n"
+       "Inventory down: 20 of 20 orders accepted, all confirmed 15 s after it returned.\n"
        "Kafka down: 20 of 20 accepted, all confirmed 34 s after it returned.\n"
-       "Accepted to confirmed: p50 231 ms, p95 304 ms.", lx, y + 28, 460, 90, fs=12)
+       "Accepted to confirmed: p50 232 ms, p95 360 ms.", lx, y + 28, 460, 90, fs=12)
 d.text("Legend", lx, 760, 460, 20, fs=13, bold=True)
 d.text("Solid: requests and events\nGrey border: observability", lx, 782, 460, 40, fs=12, color=SUB)
 open(f"{OUTDIR}/architecture.drawio", "w").write(d.xml())
@@ -303,7 +303,7 @@ L.text("Measured on a 3-node Kubernetes cluster", 22, 430, 500, 20, fs=13, bold=
 for n, s_ in enumerate(["40 orders for 10 monitors: exactly 10 confirmed",
                         "Inventory down: 20 of 20 orders accepted, none lost",
                         "Kafka down: 20 of 20 accepted, all confirmed after",
-                        "Accepted to confirmed: p50 231 ms"]):
+                        "Accepted to confirmed: p50 232 ms"]):
     L.text(s_, 22, 456 + n * 22, 500, 20, fs=12)
 L.text("CI builds both services, runs them on Kubernetes and repeats the outage drills on every push.", 22, 570, 500, 36, fs=12)
 L.text("github.com/gumagatsby/event-driven-orders", 22, 646, 500, 18, fs=11, color=SUB)

@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { join } from 'node:path';
@@ -24,7 +24,8 @@ interface InventoryStub extends grpc.Client {
 
 /** gRPC client for the inventory service, loaded from the shared .proto at runtime. */
 @Injectable()
-export class InventoryClient implements OnApplicationShutdown {
+export class InventoryClient implements OnModuleInit, OnApplicationShutdown {
+  private readonly log = new Logger(InventoryClient.name);
   private readonly stub: InventoryStub;
 
   constructor() {
@@ -40,6 +41,17 @@ export class InventoryClient implements OnApplicationShutdown {
     this.stub = new pkg.inventory.v1.InventoryService(config.inventoryGrpc, grpc.credentials.createInsecure(), {
       'grpc.service_config': JSON.stringify({ loadBalancingConfig: [{ round_robin: {} }] }),
     });
+  }
+
+  /**
+   * Connect at start-up rather than on the first request. A cold connection
+   * takes longer than the 300 ms call deadline, so otherwise the first calls
+   * after a deploy would fail.
+   */
+  onModuleInit() {
+    this.stub.waitForReady(Date.now() + 30_000, (err) =>
+      err ? this.log.warn(`Inventory not reachable yet: ${err.message}`) : this.log.log('Connected to inventory'),
+    );
   }
 
   private call<Req, Res>(method: Unary<Req, Res>, req: Req): Promise<Res> {

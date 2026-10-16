@@ -59,6 +59,12 @@ const percentile = (xs, p) => [...xs].sort((a, b) => a - b)[Math.min(xs.length -
   const products = await (await fetch(`${API}/products`)).json();
   check('catalogue served over gRPC', products.length === 5, `${products.length} products`);
   setStock('CB-005', 1000);
+  // Ten unmeasured orders first, so JIT compilation and connection set-up in a
+  // freshly started cluster do not count towards the latency figures.
+  for (let i = 0; i < 10; i++) {
+    const { body } = await place([{ sku: 'CB-005', quantity: 1 }]);
+    await settle([body.id]);
+  }
   const latencies = [];
   for (let batch = 0; batch < 10; batch++) {
     await Promise.all(
@@ -72,7 +78,7 @@ const percentile = (xs, p) => [...xs].sort((a, b) => a - b)[Math.min(xs.length -
   }
   check('100 orders confirmed', latencies.length === 100, `${latencies.length} confirmed`);
   check(
-    'accepted to confirmed latency',
+    'accepted to confirmed latency, after 10 warm-up orders',
     latencies.length > 0,
     `p50 ${percentile(latencies, 50)} ms, p95 ${percentile(latencies, 95)} ms, max ${Math.max(...latencies)} ms`,
   );

@@ -16,7 +16,7 @@ Neither service writes to Kafka directly from a request. It writes the event to 
 
 The relay takes a PostgreSQL advisory lock, so only one replica publishes at a time. That keeps each order's events in the order they were written. Within a batch, events for different orders are sent in parallel and events for the same order one after another.
 
-**Trade-off:** latency. Each relay polls every 200 ms, which is most of the 231 ms median from accepted to confirmed. LISTEN/NOTIFY or change data capture (Debezium) would cut that; polling is simpler and was fast enough here.
+**Trade-off:** latency. Each relay polls every 200 ms, which is most of the 232 ms median from accepted to confirmed. LISTEN/NOTIFY or change data capture (Debezium) would cut that; polling is simpler and was fast enough here.
 
 ## 4. At-least-once delivery, exactly-once effect
 

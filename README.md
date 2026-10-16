@@ -18,11 +18,11 @@ All from [`scripts/e2e.mjs`](scripts/e2e.mjs) on a three-node kind cluster, two 
 | What | Result |
 |---|---|
 | 40 orders race for 10 monitors | exactly **10** confirmed, stock left 0 |
-| Inventory scaled to zero, 20 orders placed | **20 of 20** accepted, all confirmed 16 s after it returned |
+| Inventory scaled to zero, 20 orders placed | **20 of 20** accepted, all confirmed 15 s after it returned |
 | Kafka scaled to zero, 20 orders placed | **20 of 20** accepted, all confirmed 34 s after it returned |
 | 10 concurrent retries with one idempotency key | **1** order |
 | Malformed message | moved to a dead-letter topic; the next order still confirmed |
-| Accepted to confirmed, 100 orders | p50 **231 ms**, p95 **304 ms** |
+| Accepted to confirmed, 100 orders | p50 **232 ms**, p95 **360 ms** |
 | Tests | 12 Java (Testcontainers: real Kafka and PostgreSQL), 20 TypeScript (real PostgreSQL) |
 
 Details and caveats: [`docs/e2e-results.md`](docs/e2e-results.md).

@@ -1,20 +1,20 @@
 # End-to-end results
 
-Run on 16 October 2026 with [`scripts/e2e.mjs`](../scripts/e2e.mjs) against a local kind cluster: one control-plane node and two workers, two replicas each of the orders and inventory services spread across the workers, a single Kafka 4.3.1 broker (KRaft) and one PostgreSQL 17 per service. Docker had 10 CPUs and 7.7 GB of memory. CI runs the same script on every push.
+Run on 16 October 2026, on a freshly created cluster, with [`scripts/e2e.mjs`](../scripts/e2e.mjs) against a local kind cluster: one control-plane node and two workers, two replicas each of the orders and inventory services spread across the workers, a single Kafka 4.3.1 broker (KRaft) and one PostgreSQL 17 per service. Docker had 10 CPUs and 7.7 GB of memory. CI runs the same script on every push.
 
 All 13 checks passed.
 
 | Check | Result |
 |---|---|
 | Catalogue served over gRPC | 5 products |
-| 100 orders, 10 at a time | 100 confirmed |
-| Time from accepted (202) to confirmed | p50 231 ms, p95 304 ms, max 365 ms |
+| 100 orders, 10 at a time, after 10 unmeasured warm-up orders | 100 confirmed |
+| Time from accepted (202) to confirmed | p50 232 ms, p95 360 ms, max 373 ms |
 | 40 orders race for 10 monitors | exactly 10 confirmed, 30 rejected, stock left 0 |
 | 10 concurrent retries with one idempotency key | 1 order |
 | Cancel a confirmed order | available stock 11, then back to 15 |
 | Malformed message on `orders.events` | moved to `orders.events.DLT`; the next order was still confirmed |
 | Inventory scaled to zero, 20 orders placed | 20 of 20 accepted |
-| Inventory scaled back up | all 20 confirmed 16 s later, including JVM start-up |
+| Inventory scaled back up | all 20 confirmed 15 s later, including JVM start-up |
 | Kafka scaled to zero, 20 orders placed | 20 of 20 accepted |
 | Kafka scaled back up | all 20 confirmed 34 s later |
 | Orders left pending at the end | 0 |
@@ -34,8 +34,10 @@ All 13 checks passed.
 
 **Network policy.** The cluster enforces it. A pod without the `orders` label could not reach inventory's gRPC port, and the inventory service could not connect to the orders database. Inventory's HTTP port (health and metrics) stays open inside the cluster.
 
-## What the first run caught
+## What earlier runs caught
 
-The first full run also passed all 13 checks, with p50 340 ms and p95 737 ms while the JVM warmed up. Afterwards, the traces were missing: **Jaeger had been OOM-killed.** Its in-memory store has no limit by default, and the run pushed it past its 384 MiB limit. It now keeps at most 20,000 traces in 512 MiB. The run above is the second, after that fix and the gRPC balancing change.
+- **Jaeger was OOM-killed.** The first local run passed all 13 checks, but afterwards the traces were missing. Jaeger's in-memory store has no limit by default, and the run pushed it past its 384 MiB limit. It now keeps at most 20,000 traces in 512 MiB.
+- **The first gRPC calls after a deploy failed.** The first CI run passed 12 of 13 checks: `GET /products`, called seconds after the cluster came up, returned 503. The orders service only opened its gRPC connection on the first request, and setting it up took longer than the 300 ms deadline. Orders placed at that moment were still accepted, because the check is advisory, but the catalogue was not served. The service now connects at start-up, and on a fresh cluster `/products` returned 200 straight after deployment.
+- **Cold start skews latency.** That CI run's p95 was 4.1 s, almost all from the first orders after start-up (JIT compilation, consumer groups joining). The latency figures now follow 10 unmeasured warm-up orders.
 
 These numbers come from one laptop. They show the system behaves correctly when things fail. They are not a capacity plan.
