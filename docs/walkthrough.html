@@ -24,7 +24,7 @@ img{break-inside:avoid;box-sizing:border-box;width:100%;border:1px solid #dde2ea
 <h1>Event-driven order system</h1>
 <p class="sub">Walkthrough in five parts: what each piece does, why it was built that way, and how to talk about it in an interview.<br>Repo: github.com/gumagatsby/event-driven-orders</p>
 
-<img src="architecture.png" alt="Container diagram">
+<img src="architecture.png" alt="Architecture diagram">
 
 <div class="box"><b>The one-sentence pitch.</b> I built two microservices, one in TypeScript and one in Java, that take and fulfil orders over Kafka and gRPC on Kubernetes, designed so that an order is never lost even with Kafka or the inventory service down, stock is never oversold, and every event takes effect exactly once; then I proved it by taking each dependency down on a live cluster and checking every order came through.</div>
 

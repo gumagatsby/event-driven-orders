@@ -9,7 +9,7 @@ Two microservices that take and fulfil orders through events, built to keep work
 - **Between them:** Apache Kafka for events, gRPC for queries
 - **Platform:** Kubernetes (kind) with Helm, OpenTelemetry tracing to Jaeger, CI on GitHub Actions
 
-![Container diagram](docs/architecture.png)
+![Architecture](docs/architecture.png)
 
 ## Measured results
 

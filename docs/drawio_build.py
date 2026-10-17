@@ -206,7 +206,7 @@ d.text("40 orders for 10 monitors: exactly 10 confirmed.\n"
        "Accepted to confirmed: p50 232 ms, p95 360 ms.", lx, y + 28, 460, 90, fs=12)
 d.text("Legend", lx, 760, 460, 20, fs=13, bold=True)
 d.text("Solid: requests and events\nGrey border: observability", lx, 782, 460, 40, fs=12, color=SUB)
-open(f"{OUTDIR}/architecture.drawio", "w").write(d.xml())
+# architecture.drawio is now edited directly in draw.io (AWS reference-architecture style), not generated here.
 
 # =====================================================================
 # 2. Order flow sequence
