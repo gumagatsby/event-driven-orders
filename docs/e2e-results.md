@@ -38,8 +38,8 @@ All 13 checks passed.
 
 ## What earlier runs caught
 
-- **Jaeger was OOM-killed.** The first local run passed all 13 checks, but afterwards the traces were missing. Jaeger's in-memory store has no limit by default, and the run pushed it past its 384 MiB limit. It now keeps at most 20,000 traces in 512 MiB.
-- **The first gRPC calls after a deploy failed.** The first CI run passed 12 of 13 checks: `GET /products`, called seconds after the cluster came up, returned 503. The orders service only opened its gRPC connection on the first request, and setting it up took longer than the 300 ms deadline. Orders placed at that moment were still accepted, because the check is advisory, but the catalogue was not served. The service now connects at start-up, and on a fresh cluster `/products` returned 200 straight after deployment.
-- **Cold start skews latency.** That CI run's p95 was 4.1 s, almost all from the first orders after start-up (JIT compilation, consumer groups joining). The latency figures now follow 10 unmeasured warm-up orders.
+- Jaeger was OOM-killed. The first local run passed all 13 checks, but afterwards the traces were missing. Jaeger's in-memory store has no limit by default, and the run pushed it past its 384 MiB limit. It now keeps at most 20,000 traces in 512 MiB.
+- The first gRPC calls after a deploy failed. The first CI run passed 12 of 13 checks: `GET /products`, called seconds after the cluster came up, returned 503. The orders service only opened its gRPC connection on the first request, and setting it up took longer than the 300 ms deadline. Orders placed at that moment were still accepted, because the check is advisory, but the catalogue was not served. The service now connects at start-up, and on a fresh cluster `/products` returned 200 straight after deployment.
+- Cold start skews latency. That CI run's p95 was 4.1 s, almost all from the first orders after start-up (JIT compilation, consumer groups joining). The latency figures now follow 10 unmeasured warm-up orders.
 
 These numbers come from one laptop. They show the system behaves correctly when things fail. They are not a capacity plan.

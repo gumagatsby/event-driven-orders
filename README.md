@@ -4,10 +4,10 @@
 
 Two microservices that take and fulfil orders through events, built to keep working when parts of the system fail. An order is never lost, even with the event broker or the inventory service down; stock is never oversold under concurrent load; and every event takes effect exactly once, in order.
 
-- **Orders service:** TypeScript, NestJS, PostgreSQL
-- **Inventory service:** Java 21, Spring Boot, PostgreSQL
-- **Between them:** Apache Kafka for events, gRPC for queries
-- **Platform:** Kubernetes (kind) with Helm, OpenTelemetry tracing to Jaeger, CI on GitHub Actions
+- Orders service: TypeScript, NestJS, PostgreSQL
+- Inventory service: Java 21, Spring Boot, PostgreSQL
+- Between them: Apache Kafka for events, gRPC for queries
+- Platform: Kubernetes (kind) with Helm, OpenTelemetry tracing to Jaeger, CI on GitHub Actions
 
 ![Architecture](docs/architecture.png)
 
