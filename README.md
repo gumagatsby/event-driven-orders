@@ -1,6 +1,6 @@
 # Event-driven order system
 
-[![ci](https://github.com/gumagatsby/event-driven-orders/actions/workflows/ci.yml/badge.svg)](https://github.com/gumagatsby/event-driven-orders/actions/workflows/ci.yml)
+[![ci](https://github.com/tapiwa-magumise/event-driven-orders/actions/workflows/ci.yml/badge.svg)](https://github.com/tapiwa-magumise/event-driven-orders/actions/workflows/ci.yml)
 
 Two microservices that take and fulfil orders through events, built to keep working when parts of the system fail. An order is never lost, even with the event broker or the inventory service down; stock is never oversold under concurrent load; and every event takes effect exactly once, in order.
 
